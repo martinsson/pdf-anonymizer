@@ -20,6 +20,26 @@ var BackOffAmount = 1.5;
 
 function AnonymizingDevice(pixmap, characterMap, characterWhitelist, zoneWhitelist, maskImages) {
 
+    var replacements = [
+        "A2CM",
+        "SCI",
+        "1",
+        "Chemin",
+        "des",
+        "oiseaux",
+        "38700",
+        "CORENC",
+    ]
+    var stopWords = read("./stopwords.txt").split('\n')
+    replacements = replacements.filter(function (r) {
+        return stopWords.indexOf(r) === -1
+    }).filter(function (r) {
+        // todo allow for replacement of siren
+        return isNaN(parseInt(r))
+    }).map(function (r) {
+        return r.toLowerCase()
+    })
+
     this.dd = DrawDevice(Identity, pixmap);
     this.characterMap = characterMap;
     this.characterWhitelist = characterWhitelist;
@@ -84,12 +104,20 @@ function AnonymizingDevice(pixmap, characterMap, characterWhitelist, zoneWhiteli
         return chunks;
     };
 
+    function shouldBeKept(original) {
+        return replacements.indexOf(original.trim().toLowerCase()) === -1
+    }
+
     this.anonymize = function(glyphs) {
         var attempts = 0;
         var tolerance = GlyphReplacementTolerance * glyphs[0].size;
         var original = "";
         for (var i = 0; i < glyphs.length; ++i) {
             original += glyphs[i].string;
+        }
+        if (shouldBeKept(original)) {
+            print("not replacing " + original)
+            return glyphs;
         }
         print("replacing " + JSON.stringify(original) + " (tolerance: " + tolerance.toFixed(1) + ")");
         while (true) {
