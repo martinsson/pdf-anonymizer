@@ -1,3 +1,7 @@
+# Dexyos
+
+    mutool run anonymize.js ~/WKS/src/cerfas/divers/Plaquette\ SCI\ A2CM\ 2019\ signelec.pdf  output.pdf
+
 # PDF Anonymizer
 
 This script takes PDF documents and randomizes the characters within to produce an anonymized version with visual similarities to the original.
