@@ -27,15 +27,15 @@ function AnonymizingDevice(pixmap, characterMap, characterWhitelist, zoneWhiteli
         "Chemin",
         "des",
         "oiseaux",
-        "38700",
-        "CORENC",
+        "38700CORENC",
+        "821819455"
     ]
     var stopWords = read("./stopwords.txt").split('\n')
     replacements = replacements.filter(function (r) {
         return stopWords.indexOf(r) === -1
-    }).filter(function (r) {
-        // todo allow for replacement of siren
-        return isNaN(parseInt(r))
+    // }).filter(function (r) {
+    //     // todo allow for replacement of siren
+    //     return isNaN(parseInt(r))
     }).map(function (r) {
         return r.toLowerCase()
     })
@@ -58,29 +58,63 @@ function AnonymizingDevice(pixmap, characterMap, characterWhitelist, zoneWhiteli
         return subChunks.reduce(function (acc, cur) {return acc.concat(cur)}, [] )
     }
 
+    function wordToAnonymize(chunks, currentPos, wordsToAnonymize) {
+        for (var i = 0; i < wordsToAnonymize.length; i++) {
+            var word = wordsToAnonymize[i]
+            print('processing word ', word)
+            var subChunks = chunks.slice(currentPos, currentPos + word.length);
+            var singleChunk = chunks[currentPos];
+            var spannedChunks = flatten(subChunks);
+            var allChunks = spannedChunks;
+            var spannedWord = glyphsToString(allChunks)
+            print('spanned word ', spannedWord, ' word ', word)
+            var isWordToAnonymize = spannedWord.toLowerCase() === word;
+            if (isWordToAnonymize) {
+                return word;
+            }
+        }
+        for (var i = 0; i < wordsToAnonymize.length; i++) {
+            var word = wordsToAnonymize[i]
+            var singleChunk = chunks[currentPos];
+            var spannedWord = glyphsToString(singleChunk)
+            var isWordToAnonymize = spannedWord.toLowerCase() === word;
+            if (isWordToAnonymize) {
+                return word;
+            }
+        }
+
+        return undefined
+        // var spannedWord = wordsToAnonymize.find(function (word) {
+        //     var subChunks = chunks.slice(currentPos, currentPos + word.length);
+        //     var spannedChunks = flatten(subChunks);
+        //     var singleChunk = chunks[currentPos];
+        //     var allChunks = spannedChunks.concat(singleChunk);
+        //     var isWordToAnonymize = glyphsToString(allChunks) === word;
+        //     return isWordToAnonymize;
+        // })
+        // return spannedWord;
+    }
+
     this.anonymizeText = function (text, ctm) {
         var glyphs = this.textToGlyphs(text, ctm);
         var chunks = this.tokenize(glyphs);
         var anonymizedText = new Text();
         for (var i = 0; i < chunks.length; ++i) {
 
-            var siren = "81945";
-            var subChunks = chunks.slice(i, i + siren.length);
             var anonymized;
-            if (glyphsToString(flatten(subChunks)) === siren) {
+            var word = wordToAnonymize(chunks, i, replacements);
+            if (word) {
+                var subChunks = chunks.slice(i, i + word.length);
                 anonymized = this.anonymize(flatten(subChunks));
-                print('replacing spanned', glyphsToString(flatten(subChunks)));
 
+                print('replacing spanned', glyphsToString(flatten(subChunks)));
                 print('before', i);
                 i+=subChunks.length-1;
                 print('after', i);
 
-            } else if (shouldBeKept(glyphsToString(chunks[i]))) {
-                print('keeping', glyphsToString(chunks[i]));
+            } else  {
                 anonymized = chunks[i];
-            } else {
-                print('replacing', glyphsToString(chunks[i]));
-                anonymized = this.anonymize(chunks[i]);
+                print('keeping', glyphsToString(chunks[i]));
             }
             var textChunk = anonymized;
             this.glyphsToText(textChunk).walk(anonymizedText);
