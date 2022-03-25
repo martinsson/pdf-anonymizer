@@ -51,12 +51,39 @@ function AnonymizingDevice(pixmap, characterMap, characterWhitelist, zoneWhiteli
     }
     this.maskImages = maskImages;
 
+    function flatten(subChunks) {
+        if (!subChunks) {
+            return [];
+        }
+        return subChunks.reduce(function (acc, cur) {return acc.concat(cur)}, [] )
+    }
+
     this.anonymizeText = function (text, ctm) {
         var glyphs = this.textToGlyphs(text, ctm);
         var chunks = this.tokenize(glyphs);
         var anonymizedText = new Text();
         for (var i = 0; i < chunks.length; ++i) {
-            this.glyphsToText(this.anonymize(chunks[i])).walk(anonymizedText);
+
+            var siren = "81945";
+            var subChunks = chunks.slice(i, i + siren.length);
+            var anonymized;
+            if (glyphsToString(flatten(subChunks)) === siren) {
+                anonymized = this.anonymize(flatten(subChunks));
+                print('replacing spanned', glyphsToString(flatten(subChunks)));
+
+                print('before', i);
+                i+=subChunks.length-1;
+                print('after', i);
+
+            } else if (shouldBeKept(glyphsToString(chunks[i]))) {
+                print('keeping', glyphsToString(chunks[i]));
+                anonymized = chunks[i];
+            } else {
+                print('replacing', glyphsToString(chunks[i]));
+                anonymized = this.anonymize(chunks[i]);
+            }
+            var textChunk = anonymized;
+            this.glyphsToText(textChunk).walk(anonymizedText);
         }
         return anonymizedText;
     };
@@ -108,17 +135,22 @@ function AnonymizingDevice(pixmap, characterMap, characterWhitelist, zoneWhiteli
         return replacements.indexOf(original.trim().toLowerCase()) === -1
     }
 
+    function glyphsToString(glyphs) {
+        var original = ""
+        for (var i = 0; i < glyphs.length; ++i) {
+            original += glyphs[i].string
+        }
+        return original
+    }
+
     this.anonymize = function(glyphs) {
         var attempts = 0;
         var tolerance = GlyphReplacementTolerance * glyphs[0].size;
-        var original = "";
-        for (var i = 0; i < glyphs.length; ++i) {
-            original += glyphs[i].string;
-        }
-        if (shouldBeKept(original)) {
-            print("not replacing " + original)
-            return glyphs;
-        }
+        var original = glyphsToString(glyphs)
+        // if (shouldBeKept(original)) {
+        //     print("not replacing " + original)
+        //     return glyphs;
+        // }
         print("replacing " + JSON.stringify(original) + " (tolerance: " + tolerance.toFixed(1) + ")");
         while (true) {
             attempts++;
