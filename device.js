@@ -85,7 +85,7 @@ function AnonymizingDevice(pixmap, characterMap, characterWhitelist, zoneWhiteli
 
                 anonymized = this.anonymize(flatten(subChunks));
 
-                let anonymizedString = glyphsToString(flatten(subChunks))
+                var anonymizedString = glyphsToString(flatten(subChunks));
                 print('replacing spanned', anonymizedString);
                 print('before', i);
                 i+=subChunks.length-1;
