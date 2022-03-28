@@ -46,12 +46,12 @@ function Anonymizer(fileName, annotationsFile, substitutionFrequencies, characte
         outputDoc.save(output, "compress-images");
     }
 
-    this.run = function(outputFile, highlightedOutputFile) {
+    this.run = function(outputFile, highlightedOutputFile, wordsToAnonymizeFile) {
         var images = [];
         var highlightedImages = [];
         var bounds = [];
         for (var i = 0; i < this.doc.countPages(); ++i) {
-            var result = this.getAnonymizedImage(i, outputFile);
+            var result = this.getAnonymizedImage(i, outputFile, wordsToAnonymizeFile);
             images.push(result.output);
             highlightedImages.push(result.highlightedOutput);
             bounds.push(this.doc.loadPage(i).bound());
@@ -62,7 +62,7 @@ function Anonymizer(fileName, annotationsFile, substitutionFrequencies, characte
         }
     }
 
-    this.getAnonymizedImage = function(pageIndex, tempFile) {
+    this.getAnonymizedImage = function(pageIndex, tempFile, wordsToAnonymizeFile) {
 
         var page = this.doc.loadPage(pageIndex);
         var characterMap = new map.CharacterMap(page, this.substitutionFrequencies);
@@ -72,7 +72,7 @@ function Anonymizer(fileName, annotationsFile, substitutionFrequencies, characte
 
         var zoneWhitelist = this.loadAnnotations(pageIndex, pixmap.getWidth(), pixmap.getHeight());
 
-        var anonymizingDevice = new device.AnonymizingDevice(pixmap, characterMap, this.characterWhitelist, zoneWhitelist, this.maskImages);
+        var anonymizingDevice = new device.AnonymizingDevice(pixmap, characterMap, this.characterWhitelist, zoneWhitelist, this.maskImages, wordsToAnonymizeFile);
         page.run(anonymizingDevice, this.scaleMatrix);
 
         pixmap.saveAsPNG(tempFile);

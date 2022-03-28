@@ -18,27 +18,15 @@ var BackOffAmount = 1.5;
 // methods, the AnonymizingDevice replaces the original text based on the
 // characterMap, characterWhitelist, and zoneWhitelist.
 
-function AnonymizingDevice(pixmap, characterMap, characterWhitelist, zoneWhitelist, maskImages) {
+function AnonymizingDevice(pixmap, characterMap, characterWhitelist, zoneWhitelist, maskImages, wordsToAnonymizeFile) {
 
-    var replacements = [
-        "A2CM",
-        "SCI",
-        "1",
-        "Chemin",
-        "des",
-        "oiseaux",
-        "38700CORENC",
-        "821819455"
-    ]
     var stopWords = read("./stopwords.txt").split('\n')
-    replacements = replacements.filter(function (r) {
-        return stopWords.indexOf(r) === -1
-    // }).filter(function (r) {
-    //     // todo allow for replacement of siren
-    //     return isNaN(parseInt(r))
-    }).map(function (r) {
-        return r.toLowerCase()
-    })
+    var wordsToAnonymize = read(wordsToAnonymizeFile).split('\n')
+        .filter(function (r) {
+            return stopWords.indexOf(r) === -1})
+        .map(function (r) {
+            return r.toLowerCase().replace(/ /g, "")
+        })
 
     this.dd = DrawDevice(Identity, pixmap);
     this.characterMap = characterMap;
@@ -102,12 +90,14 @@ function AnonymizingDevice(pixmap, characterMap, characterWhitelist, zoneWhiteli
         for (var i = 0; i < chunks.length; ++i) {
 
             var anonymized;
-            var word = wordToAnonymize(chunks, i, replacements);
+            var word = wordToAnonymize(chunks, i, wordsToAnonymize);
             if (word) {
                 var subChunks = chunks.slice(i, i + word.length);
+
                 anonymized = this.anonymize(flatten(subChunks));
 
-                print('replacing spanned', glyphsToString(flatten(subChunks)));
+                let anonymizedString = glyphsToString(flatten(subChunks))
+                print('replacing spanned', anonymizedString);
                 print('before', i);
                 i+=subChunks.length-1;
                 print('after', i);
@@ -166,7 +156,7 @@ function AnonymizingDevice(pixmap, characterMap, characterWhitelist, zoneWhiteli
     };
 
     function shouldBeKept(original) {
-        return replacements.indexOf(original.trim().toLowerCase()) === -1
+        return wordsToAnonymize.indexOf(original.trim().toLowerCase()) === -1
     }
 
     function glyphsToString(glyphs) {
