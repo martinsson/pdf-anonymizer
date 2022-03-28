@@ -24,9 +24,14 @@ function AnonymizingDevice(pixmap, characterMap, characterWhitelist, zoneWhiteli
     var wordsToAnonymize = read(wordsToAnonymizeFile).split('\n')
         .filter(function (r) {
             return stopWords.indexOf(r) === -1})
+        .filter(function (r) {
+            return r.indexOf("//") === -1})
         .map(function (r) {
-            return r.toLowerCase().replace(/ /g, "")
+            return r.toLowerCase()
         })
+    wordsToAnonymize = wordsToAnonymize.concat(wordsToAnonymize.map(function (w) {
+        return w.replace(/ /g, "")
+    }))
 
     this.dd = DrawDevice(Identity, pixmap);
     this.characterMap = characterMap;
@@ -46,15 +51,34 @@ function AnonymizingDevice(pixmap, characterMap, characterWhitelist, zoneWhiteli
         return subChunks.reduce(function (acc, cur) {return acc.concat(cur)}, [] )
     }
 
+    function getChunksOfLength(chunks, currentPos, length) {
+        var result = []
+        while (result.length < length && chunks.length > currentPos) {
+            var glyphs = chunks[currentPos]
+            for (var i = 0; i < glyphs.length; i++) {
+                var glyph = glyphs[i]
+                result.push(glyph)
+            }
+            // print('result length ', result.length, ' currentpos ', currentPos)
+            currentPos++
+        }
+
+        return [result, currentPos];
+    }
+
     function wordToAnonymize(chunks, currentPos, wordsToAnonymize) {
+
+        print('========== handling chunk ', glyphsToString(chunks[currentPos]))
+
         for (var i = 0; i < wordsToAnonymize.length; i++) {
             var word = wordsToAnonymize[i]
-            print('processing word ', word)
-            var subChunks = chunks.slice(currentPos, currentPos + word.length);
-            var spannedChunks = flatten(subChunks);
-            var spannedWord = glyphsToString(spannedChunks)
-            print('spanned word ', spannedWord, ' word ', word)
-            var isWordToAnonymize = spannedWord.toLowerCase() === word;
+            print('testing match for word ', word)
+
+            var spannedGlyps = getChunksOfLength(chunks, currentPos, word.length)[0]
+
+            var spannedWord = glyphsToString(spannedGlyps)
+            print('candidate spanned word ', spannedWord)
+            var isWordToAnonymize = spannedWord.toLowerCase().indexOf(word) === 0;
             if (isWordToAnonymize) {
                 return word;
             }
@@ -75,25 +99,28 @@ function AnonymizingDevice(pixmap, characterMap, characterWhitelist, zoneWhiteli
     this.anonymizeText = function (text, ctm) {
         var glyphs = this.textToGlyphs(text, ctm);
         var chunks = this.tokenize(glyphs);
+        print("chunk length", flatten(chunks).length)
+        print("full text of block", glyphsToString(flatten(chunks)))
         var anonymizedText = new Text();
-        for (var i = 0; i < chunks.length; ++i) {
+        for (var i = 0; i < chunks.length; ) {
 
             var anonymized;
             var word = wordToAnonymize(chunks, i, wordsToAnonymize);
             if (word) {
-                var subChunks = chunks.slice(i, i + word.length);
-
+                var result = getChunksOfLength(chunks, i, word.length)
+                var subChunks = result[0]
                 anonymized = this.anonymize(flatten(subChunks));
 
                 var anonymizedString = glyphsToString(flatten(subChunks));
                 print('replacing spanned', anonymizedString);
                 print('before', i);
-                i+=subChunks.length-1;
+                i = result[1];
                 print('after', i);
 
             } else  {
                 anonymized = chunks[i];
                 print('keeping', glyphsToString(chunks[i]));
+                i++
             }
             var textChunk = anonymized;
             this.glyphsToText(textChunk).walk(anonymizedText);
