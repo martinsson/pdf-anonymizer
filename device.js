@@ -51,10 +51,8 @@ function AnonymizingDevice(pixmap, characterMap, characterWhitelist, zoneWhiteli
             var word = wordsToAnonymize[i]
             print('processing word ', word)
             var subChunks = chunks.slice(currentPos, currentPos + word.length);
-            var singleChunk = chunks[currentPos];
             var spannedChunks = flatten(subChunks);
-            var allChunks = spannedChunks;
-            var spannedWord = glyphsToString(allChunks)
+            var spannedWord = glyphsToString(spannedChunks)
             print('spanned word ', spannedWord, ' word ', word)
             var isWordToAnonymize = spannedWord.toLowerCase() === word;
             if (isWordToAnonymize) {
@@ -72,15 +70,6 @@ function AnonymizingDevice(pixmap, characterMap, characterWhitelist, zoneWhiteli
         }
 
         return undefined
-        // var spannedWord = wordsToAnonymize.find(function (word) {
-        //     var subChunks = chunks.slice(currentPos, currentPos + word.length);
-        //     var spannedChunks = flatten(subChunks);
-        //     var singleChunk = chunks[currentPos];
-        //     var allChunks = spannedChunks.concat(singleChunk);
-        //     var isWordToAnonymize = glyphsToString(allChunks) === word;
-        //     return isWordToAnonymize;
-        // })
-        // return spannedWord;
     }
 
     this.anonymizeText = function (text, ctm) {

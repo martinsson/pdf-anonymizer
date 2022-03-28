@@ -12,8 +12,8 @@ var SubstitutionFrequencies = {
     digit: {0:4,   1:2,  2:2,  3:1,  4:1,   5:1,  6:1,  7:1,  8:1,   9:1}
 }
 
-if (scriptArgs.length < 2 || scriptArgs.length > 6) {
-    print("usage: mutool run anonymize.js input.pdf output.pdf wordlist.txt");
+if (scriptArgs.length < 3 ) {
+    print("usage: mutool run anonymize-listed-words.js input.pdf output.pdf wordsToAnonymize.txt");
     quit(1);
 }
 
