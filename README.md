@@ -1,6 +1,8 @@
 # Dexyos
 
-    mutool run anonymize.js ~/WKS/src/cerfas/divers/Plaquette\ SCI\ A2CM\ 2019\ signelec.pdf  output.pdf
+    mutool run anonymize-listed-words.js ~/WKS/src/cerfas/divers/Plaquette\ SCI\ A2CM\ 2019\ signelec.pdf  output.pdf wordsToAnonymize.txt
+
+where wordsToAnonymize.txt contains words and phrases separated by newlines that we want to remove from the pdf file
 
 # PDF Anonymizer
 
